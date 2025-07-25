@@ -1,0 +1,11 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "config": {
+      "pythonVersion": "3.10"
+    }
+  },
+  "deploy": {
+    "startCommand": "python manage.py migrate && gunicorn uats_project.wsgi"
+  }
+}
