@@ -1,0 +1,35 @@
+{% extends "uats/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Update Fine - UATS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Update Fine</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'fine-detail' pk=object.id %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Fine
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6">
+                    {{ form.amount|as_crispy_field }}
+                </div>
+                <div class="col-md-6">
+                    {{ form.status|as_crispy_field }}
+                </div>
+            </div>
+            {{ form.notes|as_crispy_field }}
+            <div class="d-grid gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">Update Fine</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

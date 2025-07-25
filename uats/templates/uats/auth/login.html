@@ -1,0 +1,29 @@
+{% extends "uats/base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Login - UATS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">Login to UATS</h4>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Login</button>
+                        <a href="{% url 'password_reset' %}" class="btn btn-link">Forgot password?</a>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer text-center">
+                Don't have an account? <a href="{% url 'register' %}">Register here</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,292 @@
+{% extends "uats/base.html" %}
+
+{% block title %}Fine Details - UATS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Fine Details</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'fine-list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Fines
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Fine Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Citizen:</div>
+                    <div class="col-sm-8">
+                        <a href="{% url 'citizen-detail' pk=fine.user.id %}">
+                            {{ fine.user.get_full_name }}
+                        </a>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Session Date:</div>
+                    <div class="col-sm-8">{{ fine.attendance.session.date }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Attendance Status:</div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-{% if fine.attendance.status == 'present' %}success{% elif fine.attendance.status == 'absent' %}danger{% elif fine.attendance.status == 'late' %}warning{% else %}info{% endif %}">
+                            {{ fine.attendance.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Fine Amount:</div>
+                    <div class="col-sm-8">{{ fine.amount }} RWF</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Current Status:</div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-{% if fine.status == 'paid' %}success{% elif fine.status == 'waived' %}info{% else %}danger{% endif %}">
+                            {{ fine.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Issued Date:</div>
+                    <div class="col-sm-8">{{ fine.issued_date|date:"M d, Y H:i" }}</div>
+                </div>
+                {% if fine.paid_date %}
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Paid Date:</div>
+                    <div class="col-sm-8">{{ fine.paid_date|date:"M d, Y H:i" }}</div>
+                </div>
+                {% endif %}
+                {% if fine.payment_method %}
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Payment Method:</div>
+                    <div class="col-sm-8">{{ fine.payment_method }}</div>
+                </div>
+                {% endif %}
+                {% if fine.transaction_id %}
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Transaction ID:</div>
+                    <div class="col-sm-8">{{ fine.transaction_id }}</div>
+                </div>
+                {% endif %}
+                <div class="row">
+                    <div class="col-sm-4 fw-bold">Notes:</div>
+                    <div class="col-sm-8">{{ fine.notes|default:"-" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Actions</h5>
+            </div>
+            <div class="card-body">
+                {% if user.user_type == 1 and fine.status == 'unpaid' %}
+                    <div class="d-grid gap-2 mb-3">
+                        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                            <i class="fas fa-money-bill-wave me-1"></i> Pay Fine
+                        </button>
+                    </div>
+                {% endif %}
+                
+                {% if user.user_type != 1 and fine.status == 'unpaid' %}
+                    <div class="d-grid gap-2 mb-3">
+                        <a href="{% url 'fine-update' pk=fine.id %}" class="btn btn-primary">
+                            <i class="fas fa-edit me-1"></i> Update Fine
+                        </a>
+                    </div>
+                {% endif %}
+                
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Attendance Details</h6>
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Recorded By:</strong> 
+                            {% if fine.attendance.recorded_by %}
+                                {{ fine.attendance.recorded_by.get_full_name }}
+                            {% else %}
+                                System
+                            {% endif %}
+                        </p>
+                        <p><strong>Recorded At:</strong> {{ fine.attendance.timestamp|date:"M d, Y H:i" }}</p>
+                        <p><strong>Notes:</strong> {{ fine.attendance.notes|default:"-" }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Payment Modal -->
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-labelledby="paymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="paymentModalLabel">Pay Fine</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <ul class="nav nav-tabs mb-3" id="paymentTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="bank-tab" data-bs-toggle="tab" data-bs-target="#bank-payment" type="button" role="tab">
+                            Bank/Cash
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="momo-tab" data-bs-toggle="tab" data-bs-target="#momo-payment" type="button" role="tab">
+                            MTN Mobile Money
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="paymentTabsContent">
+                    <!-- Bank/Cash Payment Tab -->
+                    <div class="tab-pane fade show active" id="bank-payment" role="tabpanel">
+                        <form method="POST" action="{% url 'fine-pay' pk=fine.id %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label">Amount to Pay</label>
+                                <input type="text" class="form-control" value="{{ fine.amount }} RWF" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Payment Method</label>
+                                <select class="form-select" name="payment_method" required>
+                                    <option value="">Select payment method</option>
+                                    <option value="MTN momo">MTN momo</option>
+                                    
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Transaction ID</label>
+                                <input type="text" class="form-control" name="transaction_id" required>
+                            </div>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success">Confirm Payment</button>
+                            </div>
+                        </form>
+                    </div>
+                    
+                    <!-- MTN Mobile Money Payment Tab -->
+                    <div class="tab-pane fade" id="momo-payment" role="tabpanel">
+                        <div class="text-center">
+                            <h5>Pay {{ fine.amount }} RWF via MTN Mobile Money</h5>
+                            <p class="text-muted">You will receive a payment request on your phone</p>
+                            
+                            <div id="momo-payment-status" class="mb-3"></div>
+                            
+                            <button id="momo-pay-button" class="btn btn-success">
+                                <i class="fas fa-mobile-alt me-2"></i> Pay Now
+                            </button>
+                            
+                            <div id="momo-processing" class="mt-3" style="display: none;">
+                                <div class="spinner-border text-success" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                <p class="mt-2">Processing payment request...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const momoButton = document.getElementById('momo-pay-button');
+    const statusDiv = document.getElementById('momo-payment-status');
+    const processingDiv = document.getElementById('momo-processing');
+    let paymentCheckInterval;
+
+    momoButton.addEventListener('click', function() {
+        momoButton.disabled = true;
+        processingDiv.style.display = 'block';
+        statusDiv.innerHTML = '';
+        
+        fetch("{% url 'initiate-momo-payment' fine.id %}", {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Network response was not ok');
+            return response.json();
+        })
+        .then(data => {
+            if (data.status === 'success') {
+                statusDiv.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Payment request sent! Please check your phone to complete the payment.
+                    </div>
+                `;
+                
+                // Check payment status every 5 seconds
+                paymentCheckInterval = setInterval(() => {
+                    checkPaymentStatus(data.reference_id);
+                }, 5000);
+            } else {
+                showError(data.message || 'Payment initiation failed');
+            }
+        })
+        .catch(error => {
+            showError(error.message || 'An error occurred while initiating payment');
+        });
+    });
+
+    function checkPaymentStatus(referenceId) {
+        fetch(`/api/payment-status/${referenceId}/`, {
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'successful') {
+                clearInterval(paymentCheckInterval);
+                statusDiv.innerHTML = `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Payment successful! Page will refresh shortly...
+                    </div>
+                `;
+                setTimeout(() => window.location.reload(), 2000);
+            } else if (data.status === 'failed') {
+                clearInterval(paymentCheckInterval);
+                showError(data.message || 'Payment failed or was cancelled');
+            }
+            // If still pending, do nothing - we'll check again
+        })
+        .catch(error => {
+            console.error('Error checking payment status:', error);
+        });
+    }
+
+    function showError(message) {
+        statusDiv.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                ${message}
+            </div>
+        `;
+        momoButton.disabled = false;
+        processingDiv.style.display = 'none';
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "uats/base.html" %}
+{% load static %}
+
+{% block title %}Home - UATS{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 text-center">
+        <img src="{% static 'uats/img/umuganda-logo.png' %}" alt="Umuganda Logo" class="img-fluid mb-4" style="max-height: 200px;">
+        <h1 class="display-4 mb-4">Umuganda Attendance Tracking System</h1>
+        <p class="lead mb-4">Digitalizing community service participation in Rwanda</p>
+        
+        {% if not user.is_authenticated %}
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <a href="{% url 'login' %}" class="btn btn-primary btn-lg px-4 gap-3">Login</a>
+                <a href="{% url 'register' %}" class="btn btn-outline-secondary btn-lg px-4">Register</a>
+            </div>
+        {% else %}
+            <a href="{% url 'dashboard' %}" class="btn btn-primary btn-lg px-4">Go to Dashboard</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-users fa-3x mb-3 text-primary"></i>
+                <h3 class="card-title">Citizen Portal</h3>
+                <p class="card-text">View your attendance records and manage fines in one convenient place.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-user-shield fa-3x mb-3 text-primary"></i>
+                <h3 class="card-title">Local Leaders</h3>
+                <p class="card-text">Efficiently record attendance and manage community participation.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <i class="fas fa-chart-line fa-3x mb-3 text-primary"></i>
+                <h3 class="card-title">Sector Officials</h3>
+                <p class="card-text">Monitor participation trends and generate comprehensive reports.</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "uats/base.html" %}
+{% load crispy_forms_tags %}
+{% load tz %}
+
+{% block title %}Create Umuganda Session{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">
+                <i class="fas fa-calendar-plus me-2"></i>
+                Add Umuganda Session
+            </h4>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                
+                <!-- Date Field with Timezone Notice -->
+                <div class="mb-3">
+                    <label for="id_date" class="form-label">Date:</label>
+                    <div class="alert alert-info py-2 mb-3">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Today: {% now "F j, Y" %} | 
+                        Note: You are {% widthratio timezone_offset 3600 1 %} hours ahead of server time.
+                    </div>
+                    <input type="date" name="date" class="form-control" required id="id_date">
+                </div>
+                
+                <!-- Sector Field -->
+                <div class="mb-3">
+                    <label for="id_sector" class="form-label">Sector:</label>
+                    <select name="sector" class="form-select" id="id_sector" {% if not can_change_sector %}disabled{% endif %}>
+                        {% for sector in sectors %}
+                            <option value="{{ sector.id }}" {% if sector.id == selected_sector %}selected{% endif %}>
+                                {{ sector.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Cell Field -->
+                <div class="mb-3">
+                    <label for="id_cell" class="form-label">Cell:</label>
+                    <select name="cell" class="form-select" id="id_cell" {% if not can_change_cell %}disabled{% endif %}>
+                        {% for cell in cells %}
+                            <option value="{{ cell.id }}" {% if cell.id == selected_cell %}selected{% endif %}>
+                                {{ cell.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Description Field -->
+                <div class="mb-3">
+                    <label for="id_description" class="form-label">Description:</label>
+                    <textarea name="description" class="form-control" rows="3" id="id_description"></textarea>
+                </div>
+                
+                <!-- Is Active Toggle -->
+                <div class="mb-4 form-check form-switch">
+                    <input class="form-check-input" type="checkbox" name="is_active" id="id_is_active" checked>
+                    <label class="form-check-label" for="id_is_active">Is active</label>
+                </div>
+                
+                <!-- Form Actions -->
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'session-list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-2"></i> Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i> Save Session
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('id_date').value = today;
+    
+    // Dynamic cell loading based on sector selection
+    document.getElementById('id_sector').addEventListener('change', function() {
+        const sectorId = this.value;
+        fetch(`/api/cells/?sector=${sectorId}`)
+            .then(response => response.json())
+            .then(data => {
+                const cellSelect = document.getElementById('id_cell');
+                cellSelect.innerHTML = '';
+                data.forEach(cell => {
+                    const option = document.createElement('option');
+                    option.value = cell.id;
+                    option.textContent = cell.name;
+                    cellSelect.appendChild(option);
+                });
+            });
+    });
+});
+</script>
+{% endblock %}

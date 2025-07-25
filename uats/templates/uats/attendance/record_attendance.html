@@ -1,0 +1,71 @@
+{% extends "uats/base.html" %}
+
+{% block title %}Record Attendance - UATS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Record Attendance</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'session-list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Sessions
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">Session: {{ session.date }} - {{ session.cell }}</h5>
+    </div>
+    <div class="card-body">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Citizen</th>
+                            <th>National ID</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in attendance_data %}
+                            <tr>
+                                <td>
+                                    {{ item.user.get_full_name }}
+                                    {% if item.user.profile_picture %}
+                                        <img src="{{ item.user.profile_picture.url }}" alt="{{ item.user.get_full_name }}" 
+                                             class="rounded-circle ms-2" width="30" height="30">
+                                    {% endif %}
+                                </td>
+                                <td>{{ item.user.national_id }}</td>
+                                <td>
+                                    <select name="status_{{ item.user.id }}" class="form-select form-select-sm">
+                                        <option value="present" {% if item.status == 'present' %}selected{% endif %}>Present</option>
+                                        <option value="absent" {% if item.status == 'absent' %}selected{% endif %}>Absent</option>
+                                        <option value="late" {% if item.status == 'late' %}selected{% endif %}>Late</option>
+                                        <option value="excused" {% if item.status == 'excused' %}selected{% endif %}>Excused</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <input type="text" name="notes_{{ item.user.id }}" 
+                                           value="{{ item.notes }}" class="form-control form-control-sm">
+                                    {% if item.attendance_id %}
+                                        <input type="hidden" name="attendance_id_{{ item.user.id }}" value="{{ item.attendance_id }}">
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-grid gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-save me-1"></i> Save Attendance
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

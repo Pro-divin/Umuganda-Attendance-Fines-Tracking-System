@@ -1,0 +1,186 @@
+{% extends "uats/base.html" %}
+
+{% block title %}Session Details - UATS{% endblock %}
+
+{% block content %}
+
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Umuganda Session Details</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <a href="{% url 'session-list' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-arrow-left me-1"></i> Back to Sessions
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Session Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Date:</div>
+                    <div class="col-sm-8">{{ session.date }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Sector:</div>
+                    <div class="col-sm-8">{{ session.sector }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Cell:</div>
+                    <div class="col-sm-8">{{ session.cell }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-4 fw-bold">Status:</div>
+                    <div class="col-sm-8">
+                        <span class="badge bg-{% if session.is_active %}success{% else %}secondary{% endif %}">
+                            {% if session.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-4 fw-bold">Description:</div>
+                    <div class="col-sm-8">{{ session.description|default:"-" }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Attendance Summary</h5>
+            </div>
+            <div class="card-body">
+                {% with attendance_stats=session.get_attendance_stats %}
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <h6 class="card-subtitle mb-2 text-muted">Present</h6>
+                        <h3>{{ attendance_stats.present }}</h3>
+                    </div>
+                    <div class="col-sm-6">
+                        <h6 class="card-subtitle mb-2 text-muted">Absent</h6>
+                        <h3>{{ attendance_stats.absent }}</h3>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-6">
+                        <h6 class="card-subtitle mb-2 text-muted">Late</h6>
+                        <h3>{{ attendance_stats.late }}</h3>
+                    </div>
+                    <div class="col-sm-6">
+                        <h6 class="card-subtitle mb-2 text-muted">Excused</h6>
+                        <h3>{{ attendance_stats.excused }}</h3>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h6 class="card-subtitle mb-2 text-muted">Total Attendance</h6>
+                    <div class="progress" style="height: 30px;">
+                        <div class="progress-bar bg-success" role="progressbar"
+                             style="width: {{ attendance_stats.attendance_rate }}%"
+                             aria-valuenow="{{ attendance_stats.attendance_rate }}"
+                             aria-valuemin="0"
+                             aria-valuemax="100">
+                            {{ attendance_stats.attendance_rate }}%
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Attendance Records</h5>
+        <div>
+            <a href="{% url 'record-attendance' pk=session.id %}" class="btn btn-sm btn-outline-light me-2">
+                <i class="fas fa-clipboard-check me-1"></i> Record Attendance
+            </a>
+            <a href="{% url 'export-attendance' session_id=session.id %}" class="btn btn-sm btn-outline-light">
+                <i class="fas fa-file-export me-1"></i> Export
+            </a>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Citizen</th>
+                        <th>Status</th>
+                        <th>Recorded By</th>
+                        <th>Timestamp</th>
+                        <th>Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for attendance in session.attendances.all %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'citizen-detail' pk=attendance.user.id %}">
+                                {{ attendance.user.get_full_name }}
+                            </a>
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if attendance.status == 'present' %}success{% elif attendance.status == 'absent' %}danger{% elif attendance.status == 'late' %}warning{% else %}info{% endif %}">
+                                {{ attendance.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if attendance.recorded_by %}
+                                {{ attendance.recorded_by.get_full_name }}
+                            {% else %}
+                                System
+                            {% endif %}
+                        </td>
+                        <td>{{ attendance.timestamp|date:"M d, Y H:i" }}</td>
+                        <td>{{ attendance.notes|truncatechars:30 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No attendance records found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if user.user_type == 2 or user.user_type == 3 %}
+<div class="card">
+    <div class="card-header bg-danger text-white">
+        <h5 class="mb-0">Danger Zone</h5>
+    </div>
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-1">Toggle Session Status</h6>
+                <p class="mb-0 small text-muted">
+                    {% if session.is_active %}
+                    Deactivate this session to prevent further attendance recording
+                    {% else %}
+                    Activate this session to allow attendance recording
+                    {% endif %}
+                </p>
+            </div>
+            <form method="POST" action="{% url 'session-toggle' pk=session.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-{% if session.is_active %}danger{% else %}success{% endif %}">
+                    {% if session.is_active %}
+                    <i class="fas fa-times-circle me-1"></i> Deactivate
+                    {% else %}
+                    <i class="fas fa-check-circle me-1"></i> Activate
+                    {% endif %}
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}

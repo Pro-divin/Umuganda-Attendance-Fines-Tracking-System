@@ -1,0 +1,100 @@
+{% extends "uats/base.html" %}
+
+{% block title %}Fines Report - UATS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Fines Report</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <form method="GET" class="row g-2">
+            <div class="col-md-5">
+                <input type="date" class="form-control form-control-sm" name="start_date" value="{{ start_date }}">
+            </div>
+            <div class="col-md-5">
+                <input type="date" class="form-control form-control-sm" name="end_date" value="{{ end_date }}">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-sm btn-outline-primary w-100">Filter</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h6 class="card-title text-uppercase small">Total Fines</h6>
+                <h2 class="mb-0">{{ total_fines }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h6 class="card-title text-uppercase small">Paid Fines</h6>
+                <h2 class="mb-0">{{ paid_fines }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-danger">
+            <div class="card-body">
+                <h6 class="card-title text-uppercase small">Unpaid Fines</h6>
+                <h2 class="mb-0">{{ unpaid_fines }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h6 class="card-title text-uppercase small">Total Amount</h6>
+                <h2 class="mb-0">{{ total_amount }} RWF</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Citizen</th>
+                        <th>Cell</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fine in fines %}
+                        <tr>
+                            <td>{{ fine.issued_date|date:"M d, Y" }}</td>
+                            <td>{{ fine.user.get_full_name }}</td>
+                            <td>{{ fine.user.cell }}</td>
+                            <td>{{ fine.amount }} RWF</td>
+                            <td>
+                                <span class="badge bg-{% if fine.status == 'paid' %}success{% elif fine.status == 'waived' %}info{% else %}danger{% endif %}">
+                                    {{ fine.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <a href="{% url 'fine-detail' pk=fine.id %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center">No fines found</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

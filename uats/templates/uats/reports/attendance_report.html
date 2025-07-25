@@ -1,0 +1,86 @@
+{% extends "uats/base.html" %}
+
+{% block title %}Attendance Report - UATS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Attendance Report</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="fas fa-calendar me-1"></i> {{ year }}
+            </button>
+            <ul class="dropdown-menu">
+                {% for y in available_years %}
+                    <li><a class="dropdown-item" href="?year={{ y.year }}">{{ y.year }}</a></li>
+                {% endfor %}
+            </ul>
+        </div>
+        <a href="{% url 'fines-report' %}" class="btn btn-sm btn-outline-primary">
+            <i class="fas fa-exchange-alt me-1"></i> View Fines Report
+        </a>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        {% if user.user_type == 3 %}<th>Cell</th>{% endif %}
+                        <th>Present</th>
+                        <th>Absent</th>
+                        <th>Late</th>
+                        <th>Excused</th>
+                        <th>Attendance Rate</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in report_data %}
+                        <tr>
+                            <td>{{ item.session.date }}</td>
+                            {% if user.user_type == 3 %}<td>{{ item.session.cell }}</td>{% endif %}
+                            <td>{{ item.present }}</td>
+                            <td>{{ item.absent }}</td>
+                            <td>{{ item.late }}</td>
+                            <td>{{ item.excused }}</td>
+                            <td>
+                                {% with total=item.present|add:item.absent|add:item.late|add:item.excused %}
+                                    {% if total > 0 %}
+                                        {% widthratio item.present total 100 %}%
+                                    {% else %}
+                                        0%
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <div class="btn-group btn-group-sm">
+                                    <a href="{% url 'session-detail' pk=item.session.id %}" class="btn btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'export-attendance' session_id=item.session.id %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-file-export"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="{% if user.user_type == 3 %}8{% else %}7{% endif %}" class="text-center">No attendance data available</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+{% if not report_data %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle me-2"></i> No attendance records found for the selected year.
+</div>
+{% endif %}
+{% endblock %}

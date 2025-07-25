@@ -1,0 +1,206 @@
+{% extends "uats/base.html" %}
+{% load static %}
+
+{% block title %}Dashboard - UATS{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">Dashboard</h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        {% if user.user_type == 2 or user.user_type == 3 %}
+            <a href="{% url 'session-create' %}" class="btn btn-sm btn-outline-primary me-2">
+                <i class="fas fa-plus me-1"></i> New Session
+            </a>
+        {% endif %}
+        {% if user.user_type == 2 %}
+            <a href="{% url 'record-attendance' pk=latest_session.id %}" class="btn btn-sm btn-primary">
+                <i class="fas fa-clipboard-check me-1"></i> Record Attendance
+            </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row">
+    <!-- Quick Stats -->
+    {% if user.user_type == 1 %}  <!-- Citizen -->
+        <div class="col-md-4 mb-4">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase small">Attendance Rate</h6>
+                            <h2 class="mb-0">{{ attendance_rate|default:"0" }}%</h2>
+                            <small class="text-white-50">{{ present_count|default:"0" }} of {{ total_sessions|default:"0" }} sessions</small>
+                        </div>
+                        <i class="fas fa-calendar-check fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase small">Present Sessions</h6>
+                            <h2 class="mb-0">{{ present_count|default:"0" }}</h2>
+                        </div>
+                        <i class="fas fa-user-check fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="card-title text-uppercase small">Unpaid Fines</h6>
+                            <h2 class="mb-0">{{ unpaid_fines_count|default:"0" }}</h2>
+                        </div>
+                        <i class="fas fa-exclamation-triangle fa-3x opacity-50"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+    {% elif user.user_type == 2 %}  <!-- Local Leader -->
+        <!-- ... (keep existing leader stats) ... -->
+    {% elif user.user_type == 3 %}  <!-- Sector Official -->
+        <!-- ... (keep existing official stats) ... -->
+    {% endif %}
+</div>
+
+<div class="row">
+    <!-- Recent Activity Section -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Recent Attendance</h5>
+                {% if user.user_type == 1 %}
+                <a href="{% url 'attendance-report' %}" class="btn btn-sm btn-outline-primary">View Full Report</a>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if user.user_type == 1 %}  <!-- Citizen -->
+                    {% if attendances %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Session</th>
+                                    <th>Status</th>
+                                    <th>Notes</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attendance in attendances %}
+                                    <tr>
+                                        <td>{{ attendance.session.date|date:"M d, Y" }}</td>
+                                        <td>{{ attendance.session.get_session_type_display }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if attendance.status == 'present' %}success{% elif attendance.status == 'absent' %}danger{% elif attendance.status == 'late' %}warning{% else %}secondary{% endif %}">
+                                                {{ attendance.get_status_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ attendance.notes|default:"-"|truncatechars:30 }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info mb-0">
+                        <i class="fas fa-info-circle me-2"></i> No attendance records found.
+                    </div>
+                    {% endif %}
+                    
+                {% elif user.user_type == 2 %}  <!-- Local Leader -->
+                    <!-- ... (keep existing leader activity) ... -->
+                {% elif user.user_type == 3 %}  <!-- Sector Official -->
+                    <!-- ... (keep existing official activity) ... -->
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notifications/Fines Section -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Notifications</h5>
+                <span class="badge bg-primary rounded-pill">{{ notifications.count }}</span>
+            </div>
+            <div class="card-body p-0">
+                {% if notifications %}
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications %}
+                        <a href="{{ notification.link }}" 
+                           class="list-group-item list-group-item-action {% if not notification.is_read %}fw-bold{% endif %}">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                            </div>
+                            <p class="mb-1 text-muted">{{ notification.message|truncatechars:60 }}</p>
+                            {% if not notification.is_read %}
+                            <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                                <span class="visually-hidden">New alert</span>
+                            </span>
+                            {% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center p-4">
+                    <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                    <p class="mb-0 text-muted">No new notifications</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-center">
+                <a href="{% url 'notifications' %}" class="btn btn-sm btn-outline-primary">View All Notifications</a>
+            </div>
+        </div>
+        
+        {% if user.user_type == 1 %}  <!-- Citizen -->
+            <div class="card mt-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Recent Fines</h5>
+                    {% if fines.count > 0 %}
+                    <span class="badge bg-danger rounded-pill">{{ unpaid_fines_count|default:"0" }} unpaid</span>
+                    {% endif %}
+                </div>
+                <div class="card-body p-0">
+                    {% if fines %}
+                    <div class="list-group list-group-flush">
+                        {% for fine in fines %}
+                            <a href="{% url 'fine-detail' pk=fine.id %}" class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1">Fine #{{ fine.id }}</h6>
+                                    <span class="badge bg-{% if fine.status == 'paid' %}success{% elif fine.status == 'waived' %}info{% else %}danger{% endif %}">
+                                        {{ fine.get_status_display }}
+                                    </span>
+                                </div>
+                                <p class="mb-1">{{ fine.reason|truncatechars:40 }}</p>
+                                <small class="text-muted">{{ fine.amount }} RWF • {{ fine.issued_date|date:"M d, Y" }}</small>
+                            </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center p-4">
+                        <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                        <p class="mb-0 text-muted">No fines recorded</p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-center">
+                    <a href="{% url 'fine-list' %}" class="btn btn-sm btn-outline-primary">View All Fines</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
